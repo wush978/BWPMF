@@ -64,8 +64,9 @@ for(season in names(src.path)) {
             colClasses = as.vector(bidclass),
             na.strings = "Na",
             col.names = names(bidclass)[sort(id)],
-            nrows = -1L)
-    tb %>% dplyr::filter(iPinyouID != "")
+            nrows = -1L, data.table = FALSE)
+    tb %>% dplyr::filter(iPinyouID != "") %>%
+      dplyr::mutate(Timestamp = strptime(Timestamp, "%Y%m%d%H%M%OS") %>% as.POSIXct)
   })
   df <- rbindlist(retval[[season]]) %>% as.data.frame
   dbWriteTable(db, sprintf("user_history_%s", season), df, 
@@ -75,4 +76,20 @@ for(season in names(src.path)) {
   clusterEvalQ(cl, gc())
 }
 stopCluster(cl)
+for(tbname in dbListTables(db)) {
+  sprintf("row count of %s: %d\n",
+          tbname,
+          dbGetQuery(db, sprintf("SELECT count(*) from %s", tbname))[[1]][1]) %>%
+    cat
+  dbGetQuery(db, sprintf("SELECT * FROM %s LIMIT 10", tbname))
+  for(target in c("Timestamp", "iPinyouID")) {
+    sql <- sprintf(
+      "CREATE INDEX IF NOT EXISTS Timestamp_%s ON %s (%s)",
+      tbname,
+      tbname,
+      target)
+    dbGetQuery(db, sql)
+  }
+  
+}
 dbDisconnect(db)
