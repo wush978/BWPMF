@@ -1,22 +1,24 @@
 #'@export
 deserialize_cookie <- function(src) {
-  switch(class(src),
-         "raw" = deserialize_cookie_raw(src),
-         "character" = deserialize_cookie_path(src)
-  )
+  UseMethod("deserialize_cookie")
 }
 
 #'@export
 deserialize_hostname <- function(src) {
-  switch(class(src),
-         "raw" = deserialize_hostname_raw(src),
-         "character" = deserialize_hostname_path(src)
-  )
+  UseMethod("deserialize_hostname")
 }
 
 #'@export
 deserialize_history <- function(src) {
-  switch(class(src),
-         "raw" = deserialize_history_raw(src),
-         "character" = deserialize_history_path(src))
+  UseMethod("deserialize_history")
+}
+
+#'@export
+encode <- function(x, user_visit_lower_bound = 0L, ...) {
+  UseMethod("encode")
+}
+
+#'@export
+encode_data <- function(x, ...) {
+  UseMethod("encode_data")
 }

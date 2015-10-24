@@ -137,27 +137,60 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// encode
-void encode(const std::string& path, size_t user_visit_lower_bound, double progress);
-RcppExport SEXP BWPMF_encode(SEXP pathSEXP, SEXP user_visit_lower_boundSEXP, SEXP progressSEXP) {
+// encode_character
+void encode_character(const std::string& x, size_t user_visit_lower_bound, double progress, const std::string& sep1, const std::string& sep2, const std::string& sep3);
+RcppExport SEXP BWPMF_encode_character(SEXP xSEXP, SEXP user_visit_lower_boundSEXP, SEXP progressSEXP, SEXP sep1SEXP, SEXP sep2SEXP, SEXP sep3SEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type x(xSEXP);
     Rcpp::traits::input_parameter< size_t >::type user_visit_lower_bound(user_visit_lower_boundSEXP);
     Rcpp::traits::input_parameter< double >::type progress(progressSEXP);
-    encode(path, user_visit_lower_bound, progress);
+    Rcpp::traits::input_parameter< const std::string& >::type sep1(sep1SEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type sep2(sep2SEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type sep3(sep3SEXP);
+    encode_character(x, user_visit_lower_bound, progress, sep1, sep2, sep3);
     return R_NilValue;
 END_RCPP
 }
-// encode_data
-SEXP encode_data(const std::string& path, double progress);
-RcppExport SEXP BWPMF_encode_data(SEXP pathSEXP, SEXP progressSEXP) {
+// encode_data_frame
+void encode_data_frame(DataFrame x, int user_index, int item_index, bool progress);
+RcppExport SEXP BWPMF_encode_data_frame(SEXP xSEXP, SEXP user_indexSEXP, SEXP item_indexSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< DataFrame >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type user_index(user_indexSEXP);
+    Rcpp::traits::input_parameter< int >::type item_index(item_indexSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    encode_data_frame(x, user_index, item_index, progress);
+    return R_NilValue;
+END_RCPP
+}
+// encode_data_character
+SEXP encode_data_character(const std::string& x, double progress, const std::string& sep1, const std::string& sep2, const std::string& sep3);
+RcppExport SEXP BWPMF_encode_data_character(SEXP xSEXP, SEXP progressSEXP, SEXP sep1SEXP, SEXP sep2SEXP, SEXP sep3SEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const std::string& >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type x(xSEXP);
     Rcpp::traits::input_parameter< double >::type progress(progressSEXP);
-    __result = Rcpp::wrap(encode_data(path, progress));
+    Rcpp::traits::input_parameter< const std::string& >::type sep1(sep1SEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type sep2(sep2SEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type sep3(sep3SEXP);
+    __result = Rcpp::wrap(encode_data_character(x, progress, sep1, sep2, sep3));
+    return __result;
+END_RCPP
+}
+// encode_data_data_frame
+SEXP encode_data_data_frame(DataFrame x, int user_index, int item_index, bool progress);
+RcppExport SEXP BWPMF_encode_data_data_frame(SEXP xSEXP, SEXP user_indexSEXP, SEXP item_indexSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< DataFrame >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type user_index(user_indexSEXP);
+    Rcpp::traits::input_parameter< int >::type item_index(item_indexSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    __result = Rcpp::wrap(encode_data_data_frame(x, user_index, item_index, progress));
     return __result;
 END_RCPP
 }

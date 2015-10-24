@@ -11,8 +11,8 @@
 #include <boost/iostreams/device/null.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/serialization/unordered_map.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <Rcpp.h>
 
 template<typename T>

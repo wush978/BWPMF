@@ -9,11 +9,13 @@ serialize_cookie <- function(Rpath = NULL) {
     .Call('BWPMF_serialize_cookie', PACKAGE = 'BWPMF', Rpath)
 }
 
-deserialize_cookie_raw <- function(src) {
+#'@export
+deserialize_cookie.raw <- function(src) {
     invisible(.Call('BWPMF_deserialize_cookie_raw', PACKAGE = 'BWPMF', src))
 }
 
-deserialize_cookie_path <- function(path) {
+#'@export
+deserialize_cookie.character <- function(path) {
     invisible(.Call('BWPMF_deserialize_cookie_path', PACKAGE = 'BWPMF', path))
 }
 
@@ -21,11 +23,13 @@ serialize_hostname <- function(Rpath = NULL) {
     .Call('BWPMF_serialize_hostname', PACKAGE = 'BWPMF', Rpath)
 }
 
-deserialize_hostname_raw <- function(src) {
+#'@export
+deserialize_hostname.raw <- function(src) {
     invisible(.Call('BWPMF_deserialize_hostname_raw', PACKAGE = 'BWPMF', src))
 }
 
-deserialize_hostname_path <- function(path) {
+#'@export
+deserialize_hostname.character <- function(path) {
     invisible(.Call('BWPMF_deserialize_hostname_path', PACKAGE = 'BWPMF', path))
 }
 
@@ -53,46 +57,76 @@ clean_hostname <- function() {
     invisible(.Call('BWPMF_clean_hostname', PACKAGE = 'BWPMF'))
 }
 
-encode <- function(path, user_visit_lower_bound = 0L, progress = 0) {
-    invisible(.Call('BWPMF_encode', PACKAGE = 'BWPMF', path, user_visit_lower_bound, progress))
+#'@title Encode the Source File for Calculating
+#'@param x string. The path to the source file.
+#'@param user_visit_lower_bound integer. If the user visit is less than 
+#'   \code{user_visit_lower_bound}, then he/she will be filtered out.
+#'@param progress numeric. The number of lines of the source file. If 
+#'   the progress is set non-zero, then a progress bar will be displayed.
+#'@param sep1 single character. The delimiter between the user and the rest.
+#'@param sep2 single character. The delimiter between the pairs of item and the count.
+#'@param sep3 single character. The delimiter between the item and count.
+#'@export
+encode.character <- function(x, user_visit_lower_bound = 0L, progress = 0, sep1 = "\1", sep2 = "\2", sep3 = "\3") {
+    invisible(.Call('BWPMF_encode_character', PACKAGE = 'BWPMF', x, user_visit_lower_bound, progress, sep1, sep2, sep3))
 }
 
-encode_data <- function(path, progress = 0) {
-    .Call('BWPMF_encode_data', PACKAGE = 'BWPMF', path, progress)
+#'@export
+encode.data.frame <- function(x, user_index = 1L, item_index = 2L, progress = TRUE) {
+    invisible(.Call('BWPMF_encode_data_frame', PACKAGE = 'BWPMF', x, user_index, item_index, progress))
 }
 
+#'@export
+encode_data.character <- function(x, progress = 0, sep1 = "\1", sep2 = "\2", sep3 = "\3") {
+    .Call('BWPMF_encode_data_character', PACKAGE = 'BWPMF', x, progress, sep1, sep2, sep3)
+}
+
+#'@export
+encode_data.data.frame <- function(x, user_index = 1L, item_index = 2L, progress = TRUE) {
+    .Call('BWPMF_encode_data_data_frame', PACKAGE = 'BWPMF', x, user_index, item_index, progress)
+}
+
+#'@export
 serialize_history <- function(Rhistory, Rpath = NULL) {
     .Call('BWPMF_serialize_history', PACKAGE = 'BWPMF', Rhistory, Rpath)
 }
 
-deserialize_history_raw <- function(src) {
+#'@export
+deserialize_history.raw <- function(src) {
     .Call('BWPMF_deserialize_history_raw', PACKAGE = 'BWPMF', src)
 }
 
-deserialize_history_path <- function(path) {
+#'@export
+deserialize_history.character <- function(path) {
     .Call('BWPMF_deserialize_history_path', PACKAGE = 'BWPMF', path)
 }
 
-print_history <- function(Rhistory) {
+#'@export
+print.history <- function(Rhistory) {
     invisible(.Call('BWPMF_print_history', PACKAGE = 'BWPMF', Rhistory))
 }
 
+#'@export
 check_history <- function(Rhistory) {
     .Call('BWPMF_check_history', PACKAGE = 'BWPMF', Rhistory)
 }
 
+#'@export
 count_non_zero_of_history <- function(Rhistory) {
     .Call('BWPMF_count_non_zero_of_history', PACKAGE = 'BWPMF', Rhistory)
 }
 
+#'@export
 count_cookie_history <- function(Rhistory) {
     .Call('BWPMF_count_cookie_history', PACKAGE = 'BWPMF', Rhistory)
 }
 
+#'@export
 count_hostname_history <- function(Rhistory) {
     .Call('BWPMF_count_hostname_history', PACKAGE = 'BWPMF', Rhistory)
 }
 
+#'@export
 extract_history <- function(Rhistory, id) {
     .Call('BWPMF_extract_history', PACKAGE = 'BWPMF', Rhistory, id)
 }

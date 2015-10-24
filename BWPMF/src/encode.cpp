@@ -13,12 +13,14 @@ SEXP serialize_cookie(SEXP Rpath = R_NilValue) {
   }
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_cookie.raw")]]
 void deserialize_cookie_raw(RawVector src) {
   rcpp_deserialize(cookie_dict, src, true, true);
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_cookie.character")]]
 void deserialize_cookie_path(const std::string& path) {
   deserialize(path, cookie_dict);
 }
@@ -32,12 +34,14 @@ SEXP serialize_hostname(SEXP Rpath = R_NilValue) {
   }
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_hostname.raw")]]
 void deserialize_hostname_raw(RawVector src) {
   rcpp_deserialize(hostname_dict, src, true, true);
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_hostname.character")]]
 void deserialize_hostname_path(const std::string& path) {
   deserialize(path, hostname_dict);
 }
@@ -103,9 +107,9 @@ void clean_hostname() {
   hostname_dict.reserve(0);
 }
 
-const std::string& first_comp(const std::string& src) {
+const std::string& first_comp(const std::string& src, const char sep3) {
   static std::string buf;
-  auto delim = src.find((char) 3);
+  auto delim = src.find(sep3);
   // Rprintf("%zd\n", delim);
   if (delim == std::string::npos) {
     buf.resize(0);
@@ -115,10 +119,10 @@ const std::string& first_comp(const std::string& src) {
   return buf;
 }
 
-const std::pair<std::string, int>& two_comp(const std::string& src) {
+const std::pair<std::string, int>& two_comp(const std::string& src, const char sep3) {
   static std::pair<std::string, int> retval;
   static std::string buf;
-  auto delim = src.find((char) 3);
+  auto delim = src.find(sep3);
   buf.assign(src, delim + 1, src.size() - delim - 1);
   if (delim == std::string::npos) {
     retval.first.resize(0);
@@ -129,23 +133,38 @@ const std::pair<std::string, int>& two_comp(const std::string& src) {
   return retval;
 }
 
-//[[Rcpp::export]]
-void encode(const std::string& path, size_t user_visit_lower_bound = 0, double progress = 0) {
-  std::ifstream input(path.c_str());
+//'@title Encode the Source File for Calculating
+//'@param x string. The path to the source file.
+//'@param user_visit_lower_bound integer. If the user visit is less than 
+//'   \code{user_visit_lower_bound}, then he/she will be filtered out.
+//'@param progress numeric. The number of lines of the source file. If 
+//'   the progress is set non-zero, then a progress bar will be displayed.
+//'@param sep1 single character. The delimiter between the user and the rest.
+//'@param sep2 single character. The delimiter between the pairs of item and the count.
+//'@param sep3 single character. The delimiter between the item and count.
+//'@export
+//[[Rcpp::export("encode.character")]]
+void encode_character(const std::string& x, size_t user_visit_lower_bound = 0, double progress = 0,
+            const std::string& sep1 = "\1", const std::string& sep2 = "\2", 
+            const std::string& sep3 = "\3") {
+  if (sep1.size() != 1 | sep2.size() != 1 | sep3.size() != 1) {
+    throw std::invalid_argument("The nchar of sep1, sep2, and sep3 should be 1");
+  }
+  std::ifstream input(x.c_str());
   static std::vector<std::string> buf1, buf2;
   std::shared_ptr<boost::progress_display> pb(NULL);
   if (progress > 0) pb.reset(new boost::progress_display(progress));
   for(std::string str ; std::getline(input, str);) {
     if (progress > 0) pb->operator++();
-    boost::split(buf1, str, boost::is_any_of("\1"));
+    boost::split(buf1, str, boost::is_any_of(sep1));
     if (buf1.size() < 2) throw std::logic_error("invalid data");
     std::string& cookie(buf1[0]);
-    boost::split(buf2, buf1[1], boost::is_any_of("\2"));
+    boost::split(buf2, buf1[1], boost::is_any_of(sep2));
     if (buf2.size() < 1) throw std::logic_error("invalid user data");
     if (buf2.size() < user_visit_lower_bound) continue;
     encode_cookie(cookie);
     for(const std::string& s : buf2) {
-      const std::string& s2(first_comp(s));
+      const std::string& s2(first_comp(s, sep3[0]));
       if (s2.size() > 0) {
         encode_hostname(s2);
       }
@@ -153,28 +172,64 @@ void encode(const std::string& path, size_t user_visit_lower_bound = 0, double p
   }
 }
 
+bool check_na(CharacterVector::Proxy element) {
+  SEXP p = wrap(element);
+  return p == NA_STRING;
+}
 
-//[[Rcpp::export]]
-SEXP encode_data(const std::string& path, double progress = 0) {
+//'@export
+//[[Rcpp::export("encode.data.frame")]]
+void encode_data_frame(
+  DataFrame x,
+  int user_index = 1,
+  int item_index = 2,
+  bool progress = true) {
+  if (x.size() < user_index | x.size() < item_index) {
+    throw std::invalid_argument("The index is out of range");
+  }
+  CharacterVector
+    user(x[user_index - 1]),
+    item(x[item_index - 1]);
+  std::shared_ptr<boost::progress_display> pb(NULL);
+  if (progress) pb.reset(new boost::progress_display(x.nrows()));
+  for(size_t i = 0;i < x.nrows();i++) {
+    if (progress) pb->operator++();
+    if (check_na(user[i]) | check_na(item[i])) continue;
+    encode_cookie(as<std::string>(user[i]));
+    encode_hostname(as<std::string>(item[i]));
+  }
+}
+
+//'@export
+//[[Rcpp::export("encode_data.character")]]
+SEXP encode_data_character(
+    const std::string& x, 
+    double progress = 0, 
+    const std::string& sep1 = "\1", 
+    const std::string& sep2 = "\2",
+    const std::string& sep3 = "\3") {
+  if (sep1.size() != 1 | sep2.size() != 1 | sep3.size() != 1) {
+    throw std::invalid_argument("The nchar of sep1, sep2, and sep3 should be 1");
+  }
   static std::vector<std::string> buf1, buf2;
   std::shared_ptr<boost::progress_display> pb(NULL);
   std::vector<std::vector<ItemCount> > history_buffer(cookie_dict.size(), std::vector<ItemCount>());
   {
-    std::ifstream input(path.c_str());
+    std::ifstream input(x.c_str());
     if (progress > 0) pb.reset(new boost::progress_display(progress));
     for(std::string str ; std::getline(input, str);) {
       if (progress > 0) pb->operator++();
-      boost::split(buf1, str, boost::is_any_of("\1"));
+      boost::split(buf1, str, boost::is_any_of(sep1));
       if (buf1.size() < 2) throw std::logic_error("invalid data");
       std::string& cookie(buf1[0]);
       auto itor_cookie = cookie_dict.find(cookie);
       if (itor_cookie == cookie_dict.end()) continue;
       std::vector<ItemCount>& UserData(history_buffer[itor_cookie->second]);
       if (UserData.size() > 0) throw std::logic_error("Duplicated cookie");
-      boost::split(buf2, buf1[1], boost::is_any_of("\2"));
+      boost::split(buf2, buf1[1], boost::is_any_of(sep2));
       if (buf2.size() < 1) throw std::logic_error("invalid user data");
       for(const std::string& s : buf2) {
-        const std::pair<std::string, int>& comp(two_comp(s));
+        const std::pair<std::string, int>& comp(two_comp(s, sep3[0]));
         if (comp.first.size() > 0) {
           auto itor_hostname = hostname_dict.find(comp.first);
           if (itor_hostname == hostname_dict.end()) throw std::logic_error("Unknown hostname");
@@ -184,9 +239,51 @@ SEXP encode_data(const std::string& path, double progress = 0) {
     }
   }
   
-  return XPtr<History>(new History(history_buffer, hostname_dict.size()));
+  XPtr<History> retval(new History(history_buffer, hostname_dict.size()));
+  retval.attr("class") = "history";
+  return retval;
 }
 
+//'@export
+//[[Rcpp::export("encode_data.data.frame")]]
+SEXP encode_data_data_frame(
+  DataFrame x,
+  int user_index = 1,
+  int item_index = 2,
+  bool progress = true) {
+  if (x.size() < user_index | x.size() < item_index) {
+    throw std::invalid_argument("The index is out of range");
+  }
+  CharacterVector
+    user(x[user_index - 1]),
+    item(x[item_index - 1]);
+  std::shared_ptr<boost::progress_display> pb(NULL);
+  if (progress) pb.reset(new boost::progress_display(x.nrows()));
+  std::vector<std::vector<ItemCount> > history_buffer(cookie_dict.size(), std::vector<ItemCount>());
+  for(size_t i = 0;i < x.nrows();i++) {
+    if (progress) pb->operator++();
+    if (check_na(user[i]) | check_na(item[i])) continue;
+    auto itor_cookie = cookie_dict.find(as<std::string>(user[i]));
+    if (itor_cookie == cookie_dict.end()) continue;
+    auto itor_hostname = hostname_dict.find(as<std::string>(item[i]));
+    if (itor_hostname == hostname_dict.end()) continue;
+    std::vector<ItemCount>& UserData(history_buffer[itor_cookie->second]);
+    bool is_append = true;
+    for(size_t j = 0;j < UserData.size();j++) {
+      if (UserData[j].item != itor_hostname->second) continue;
+      is_append = false;
+      UserData[j].count += 1;
+    }
+    if (is_append) {
+      UserData.push_back(ItemCount(itor_hostname->second, 1));
+    }
+  }
+  XPtr<History> retval(new History(history_buffer, hostname_dict.size()));
+  retval.attr("class") = "history";
+  return retval;
+}
+
+//'@export
 //[[Rcpp::export]]
 SEXP serialize_history(SEXP Rhistory, SEXP Rpath = R_NilValue) {
   XPtr<History> phistory(Rhistory);
@@ -198,21 +295,24 @@ SEXP serialize_history(SEXP Rhistory, SEXP Rpath = R_NilValue) {
   }
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_history.raw")]]
 SEXP deserialize_history_raw(RawVector src) {
   XPtr<History> retval(new History());
   rcpp_deserialize(*retval, src, true, true);
   return retval;
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("deserialize_history.character")]]
 SEXP deserialize_history_path(const std::string& path) {
   XPtr<History> retval(new History());
   deserialize(path, *retval);
   return retval;
 }
 
-//[[Rcpp::export]]
+//'@export
+//[[Rcpp::export("print.history")]]
 void print_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
   History& history(*phistory);
@@ -225,7 +325,7 @@ void print_history(SEXP Rhistory) {
   }
 }
 
-
+//'@export
 //[[Rcpp::export]]
 NumericVector check_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
@@ -247,6 +347,7 @@ NumericVector check_history(SEXP Rhistory) {
   return wrap(count);
 }
 
+//'@export
 //[[Rcpp::export]]
 size_t count_non_zero_of_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
@@ -255,6 +356,7 @@ size_t count_non_zero_of_history(SEXP Rhistory) {
   return history.data.get_total_size();
 }
 
+//'@export
 //[[Rcpp::export]]
 size_t count_cookie_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
@@ -262,6 +364,7 @@ size_t count_cookie_history(SEXP Rhistory) {
   return history.user_size;
 }
 
+//'@export
 //[[Rcpp::export]]
 size_t count_hostname_history(SEXP Rhistory) {
   XPtr<History> phistory(Rhistory);
@@ -269,6 +372,7 @@ size_t count_hostname_history(SEXP Rhistory) {
   return history.item_size;
 }
 
+//'@export
 //[[Rcpp::export]]
 SEXP extract_history(SEXP Rhistory, NumericVector id) {
   XPtr<History> phistory(Rhistory);
