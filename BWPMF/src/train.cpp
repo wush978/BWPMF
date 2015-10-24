@@ -533,7 +533,7 @@ void train_once(SEXP Rmodel, SEXP Rhistory, SEXP Rphi, Function logger) {
   
 
 //[[Rcpp::export]]
-double pmf_logloss(SEXP Rmodel, SEXP Rhistory) {
+double pmf_logloss(SEXP Rmodel, SEXP Rhistory, double ratio = 1.0) {
   Model* pmodel(as<Model*>(Rmodel));
   Model& model(*pmodel);
   XPtr<History> phistory(Rhistory);
@@ -564,7 +564,7 @@ double pmf_logloss(SEXP Rmodel, SEXP Rhistory) {
           double item_score = item_param.shp1[k] / item_param.rte1[k];
           lambda += user_score * item_score;
         }
-        local_retval += y * log(lambda);
+        local_retval += y * log(lambda * ratio);
       }
     }
     // sum(theat_{u,k})
@@ -594,7 +594,7 @@ double pmf_logloss(SEXP Rmodel, SEXP Rhistory) {
     }
   } // #pragma omp parallel
   for(int k = 0;k < model.K;k++) {
-    retval -= user_sum[k] * item_sum[k];
+    retval -= user_sum[k] * item_sum[k] * ratio;
   }
   return -retval;
 }

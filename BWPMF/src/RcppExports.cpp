@@ -385,14 +385,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // pmf_logloss
-double pmf_logloss(SEXP Rmodel, SEXP Rhistory);
-RcppExport SEXP BWPMF_pmf_logloss(SEXP RmodelSEXP, SEXP RhistorySEXP) {
+double pmf_logloss(SEXP Rmodel, SEXP Rhistory, double ratio);
+RcppExport SEXP BWPMF_pmf_logloss(SEXP RmodelSEXP, SEXP RhistorySEXP, SEXP ratioSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type Rmodel(RmodelSEXP);
     Rcpp::traits::input_parameter< SEXP >::type Rhistory(RhistorySEXP);
-    __result = Rcpp::wrap(pmf_logloss(Rmodel, Rhistory));
+    Rcpp::traits::input_parameter< double >::type ratio(ratioSEXP);
+    __result = Rcpp::wrap(pmf_logloss(Rmodel, Rhistory, ratio));
     return __result;
 END_RCPP
 }
